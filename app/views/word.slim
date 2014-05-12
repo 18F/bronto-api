@@ -1,0 +1,4 @@
+h1 = params[:word]
+ul
+	- @syns.each do |syn|
+		== partial :word, locals: { syn: syn }

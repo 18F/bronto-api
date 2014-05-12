@@ -1,0 +1,5 @@
+/* humanstxt.org */
+
+/* SITE */
+  Standards: JSON
+  Software: Git, Sublime

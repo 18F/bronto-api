@@ -1,0 +1,129 @@
+user                nginx;
+
+# This number should be, at maximum, the number of CPU cores on your system. 
+# (since nginx doesn't benefit from more than one worker per CPU.)
+worker_processes    <%= exists?(:worker_processes) ? worker_processes : 4 %>;
+# worker_priority   -5;
+
+
+# Caches information about open FDs, freqently accessed files.
+# Changing this setting, in my environment, brought performance up from 560k req/sec, to 904k req/sec.
+# I recommend using some varient of these options, though not the specific values listed below.
+# open_file_cache max=200000 inactive=20s; 
+# open_file_cache_valid 30s; 
+# open_file_cache_min_uses 2;
+# open_file_cache_errors on;
+
+# Buffer log writes to speed up IO, or disable them altogether
+# access_log /var/log/nginx/access.log main buffer=16k;
+# access_log off;
+
+events {
+    # Determines how many clients will be served by each worker process.
+    # (Max clients = worker_connections * worker_processes)
+    # "Max clients" is also limited by the number of socket connections available on the system (~64k)
+    worker_connections    <%= exists?(:worker_connections) ? worker_connections : 4096 %>;
+
+    # essential for linux, optmized to serve many clients with each thread
+    use                     epoll;
+
+    # Accept as many connections as possible, after nginx gets notification about a new connection.
+    # May flood worker_connections, if that option is set too low.
+    multi_accept on;
+}
+
+http {
+    # Sendfile copies data between one FD and other from within the kernel. 
+    # More efficient than read() + write(), since the requires transferring data to and from the user space.
+    sendfile                            on;
+
+    # Tcp_nopush causes nginx to attempt to send its HTTP response head in one packet, 
+    # instead of using partial frames. This is useful for prepending headers before calling sendfile, 
+    # or for throughput optimization.
+    tcp_nopush on;
+
+    # don't buffer data-sends (disable Nagle algorithm). Good for sending frequent small bursts of data in real time.
+    tcp_nodelay on; 
+
+    # Timeout for keep-alive connections. Server will close connections after this time.
+    keepalive_timeout 65;
+
+
+    # Number of requests a client can make over the keep-alive connection. This is set high for testing.
+    keepalive_requests 100000;
+
+
+    # allow the server to close the connection after a client stops responding. Frees up socket-associated memory.
+    reset_timedout_connection on;
+
+
+    # send the client a "request timed out" if the body is not loaded by this time. Default 60.
+    client_body_timeout 10;
+
+
+    # If the client stops reading data, free up the stale client connection after this much time. Default 60.
+    send_timeout 2;
+
+    # Compression. Reduces the amount of data that needs to be transferred over the network
+    gzip                                on;
+    gzip_http_version                   1.1;
+    gzip_disable                        "msie6";
+    gzip_vary                           on;
+    gzip_min_length                     1100;
+    gzip_buffers                        64 8k;
+    gzip_comp_level                     3;
+    gzip_proxied expired no-cache no-store private auth;
+    gzip_types                          text/plain text/css application/json application/javascript application/x-javascript text/javascript text/xml application/xml;
+
+    client_max_body_size      128k;
+    client_body_buffer_size   128k;
+
+    include                             mime.types;
+    default_type                        application/octet-stream;
+    server_tokens                       off;
+
+    # unquote if using free passenger
+    passenger_root                      <%= exists?(:passenger_root) ? passenger_root : '/usr/local/rvm/gems/ruby-2.0.0-p353/gems/passenger-4.0.25' %>;
+    # passenger_root                      /usr/local/rvm/gems/ruby-2.1.1/gems/passenger-enterprise-server-4.0.25/;
+    passenger_ruby                      <%= exists?(:passenger_ruby) ? passenger_ruby : '/usr/local/rvm/wrappers/ruby-2.0.0-p353/ruby' %>;
+    passenger_pool_idle_time            <%= exists?(:passenger_pool_idle_time) ? passenger_pool_idle_time : 0 %>;
+    passenger_max_pool_size             <%= exists?(:passenger_max_pool_size) ? passenger_max_pool_size : 48 %>;
+    passenger_pre_start                 <%= "http://#{ip}/;" %>
+    passenger_show_version_in_header    off;
+    passenger_friendly_error_pages      off;
+
+    # internal status server
+    server {
+        listen 127.0.0.1:80;
+        server_name localhost;
+
+        location = /nginx_stub_status {
+            stub_status on;
+            allow 127.0.0.1;
+            deny all;
+        }
+    }
+
+    server {
+        listen                              <%= "#{ip}:80;" %>
+        server_name                         localhost;
+        root                                /var/www/bronto/current/public;
+        
+        passenger_enabled                   on;
+        passenger_min_instances             8;
+        passenger_set_cgi_param             HTTP_X_FORWARDED_PROTO https;
+        # send request info to new_relic
+        # proxy_set_header X-Request-Start "t=${msec}";
+        passenger_set_cgi_param HTTP_X_REQUEST_START "t=${msec}";
+
+        proxy_pass_request_headers          on;
+        proxy_set_header                    X-Auth-Token $http_x_auth_token;
+        
+        # limit_req                           zone=one burst=5;
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+    }
+}

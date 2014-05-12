@@ -1,0 +1,37 @@
+default_run_options[:pty] = true
+
+require 'capistrano/ext/multistage'
+require 'bundler/capistrano'
+require 'new_relic/recipes'
+require 'rvm/capistrano'
+
+# include additional recipes
+load 'config/deploy/recipes/base'
+load 'config/deploy/recipes/git'
+load 'config/deploy/recipes/nginx'
+
+set :stages, %w(development staging production testing local)
+set :default_stage, 'dev'
+
+set :application, 'bronto' #matches names used in smf_template.erb
+set :repository,  'https://github.com/18F/bronto.git'
+set :branch, :dev
+
+set :user, :jgrevich
+set :deploy_to, "/var/www/#{application}" # I like this location
+set :deploy_via, :remote_cache
+set :copy_exclude, [ '.ruby-gemset', '.ruby-version' ]
+set :ssh_options, { :forward_agent => true }
+set :default_shell, '/bin/bash -l'
+set :use_sudo, true
+
+set :rvm_type, :system
+set :keep_releases, 6
+set :scm, :git
+# set :scm_username, 'jgrevich'
+# set :scm_passphrase, 'secret-scm-password'
+
+before 'deploy:update', 'deploy:chown'
+after 'deploy:update', 'deploy:symlink_configs'
+
+after 'deploy:setup', 'deploy:add_shared_config'

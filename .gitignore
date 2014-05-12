@@ -1,0 +1,10 @@
+.DS_Store
+.bundle/
+.sass-cache/
+config/deploy.rb
+config/deploy/*.rb
+config/*.yml
+config/settings.rb
+coverage
+log/*.log
+tmp/**/*
