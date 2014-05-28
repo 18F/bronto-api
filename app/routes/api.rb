@@ -7,7 +7,6 @@ module Bronto
     helpers do
       include ::Sinatra::JSON
       include Bronto::Helpers::API
-      include Bronto::Helpers::Wordnet
     end
 
     before { etag("#{params[:word].downcase}") if settings.environment == :production }
@@ -15,28 +14,10 @@ module Bronto
     # API calls using BHT format
     get '/:version/:api_key/:word/?:format?' do
       query = params[:word].downcase
-      synsets = $lex.lookup_synsets(query)
-
-      words = []
       
-      synsets.each do |synset|
-        synset.words.map {|word| words << [word.lemma, synset.part_of_speech.to_sym] unless word.lemma == query}
-        
-        synset.hypernyms.each do |hypernym|
-          hypernym.words.map {|word| words << [word.lemma, synset.part_of_speech.to_sym] unless word.lemma == query}
-        end
-      end
+      hash = BrontoGem.lookup(query)
 
-      synonyms = words.sort_by {|word| word.first }.uniq!
-      
-      hash = {}
-
-      if synonyms
-        synonyms.each do |synonym|
-          hash[synonym.last] = { syn: [] } unless hash.member?(synonym.last)
-          hash[synonym.last][:syn] << synonym.first
-        end
-
+      if hash
         json hash
       else
         status 404
