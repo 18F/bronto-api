@@ -7,11 +7,11 @@ gem 'slim'
 gem 'sqlite3'
 
 # this works (assuming the the `path` properly points to a local copy of bronto-gem.git)
-gem 'bronto-gem', path: '../bronto-gem'
+#gem 'bronto-gem', path: '../bronto-gem'
 
 # pulling from github until we host on rubygems.org
 # this does not work.
-# gem 'bronto-gem', git: 'https://github.com/adelevie/bronto-gem.git', branch: 'master'
+gem 'bronto-gem', '~>0.0'#, git: 'https://github.com/adelevie/bronto-gem.git', branch: 'master'
 
 
 group :development, :test do
