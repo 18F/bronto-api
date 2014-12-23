@@ -5,8 +5,9 @@ gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'slim'
 gem 'sqlite3'
-gem 'wordnet'
-gem 'wordnet-defaultdb'
+
+gem 'bronto-gem', '~>0.0'
+
 
 group :development, :test do
   # Sass & Compass
@@ -17,7 +18,7 @@ group :development, :test do
   gem 'capybara'
   gem 'guard'
   gem 'guard-rspec'
-  gem 'pry'
+  gem 'pry-rescue'
   gem 'pry-nav'
   gem 'rdoc'
   gem 'rspec'
