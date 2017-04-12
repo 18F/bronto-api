@@ -5,8 +5,14 @@ gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'slim'
 gem 'sqlite3'
-gem 'wordnet'
-gem 'wordnet-defaultdb'
+
+# this works (assuming the the `path` properly points to a local copy of bronto-gem.git)
+gem 'bronto-gem', path: '../bronto-gem'
+
+# pulling from github until we host on rubygems.org
+# this does not work.
+# gem 'bronto-gem', git: 'https://github.com/adelevie/bronto-gem.git', branch: 'master'
+
 
 group :development, :test do
   # Sass & Compass
@@ -17,7 +23,7 @@ group :development, :test do
   gem 'capybara'
   gem 'guard'
   gem 'guard-rspec'
-  gem 'pry'
+  gem 'pry-rescue'
   gem 'pry-nav'
   gem 'rdoc'
   gem 'rspec'

@@ -5,7 +5,7 @@ module Bronto
 
     helpers do
       include Bronto::Helpers::App
-      include Bronto::Helpers::Wordnet
+      #include Bronto::Helpers::Wordnet
     end
 
     before { etag("#{params[:word].downcase}") if settings.environment == :production }
